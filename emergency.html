@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rapid Response — Emergency Block</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <style>
+    :root {
+      --red:      #E53535;
+      --red-dark: #B01E1E;
+      --bg:       #080C14;
+      --card:     #0E1523;
+      --card2:    #121C2E;
+      --border:   rgba(255,255,255,0.07);
+      --white:    #EEF2FF;
+      --muted:    #5A6A8A;
+      --green:    #1DB97A;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--white); overflow-x: hidden; }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none; z-index: 0;
+    }
+    .blob { position: fixed; border-radius: 50%; filter: blur(100px); pointer-events: none; z-index: 0; }
+    .blob-a { width: 500px; height: 500px; background: rgba(229,53,53,0.1); top: -180px; left: -150px; }
+    .blob-b { width: 300px; height: 300px; background: rgba(229,53,53,0.06); bottom: -80px; right: -60px; }
+
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 28px;
+      background: rgba(8,12,20,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-left { display: flex; align-items: center; gap: 12px; }
+    .nav-brand { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--white); }
+    .nav-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: rgba(229,53,53,0.15); color: #ff8a8a; border: 1px solid rgba(229,53,53,0.3); letter-spacing: 0.5px; }
+    .nav-right { display: flex; align-items: center; gap: 12px; }
+    .btn-back { padding: 7px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 13px; cursor: pointer; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+    .btn-back:hover { color: var(--white); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+
+    .app { position: relative; z-index: 1; }
+
+    .hero {
+      padding: 40px 28px 32px;
+      max-width: 800px; margin: 0 auto;
+      animation: fadeUp 0.5s cubic-bezier(.16,1,.3,1) both;
+    }
+    .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(36px,6vw,56px); letter-spacing: 2px; line-height: 1.05; margin-bottom: 10px; }
+    .hero h1 span { color: var(--red); }
+    .hero p { font-size: 15px; color: var(--muted); }
+
+    .section { max-width: 800px; margin: 0 auto; padding: 0 28px 32px; }
+    .section-label { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+    .etype-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }
+
+    .etype-btn {
+      position: relative;
+      background: var(--card);
+      border: 1.5px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 12px 18px;
+      cursor: pointer;
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 500;
+      text-align: center;
+      transition: all 0.25s cubic-bezier(.16,1,.3,1);
+      overflow: hidden;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .etype-btn::before { content: ''; position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at 50% 0%, rgba(229,53,53,0.2), transparent 70%); transition: opacity 0.3s; }
+    .etype-btn:hover { border-color: rgba(229,53,53,0.45); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(229,53,53,0.15); }
+    .etype-btn:hover::before { opacity: 1; }
+    .etype-btn.active { border-color: var(--red); background: rgba(229,53,53,0.12); box-shadow: 0 0 0 1px rgba(229,53,53,0.3); }
+    .etype-btn.active::before { opacity: 1; }
+    .etype-icon { font-size: 30px; line-height: 1; }
+    .etype-btn:active { transform: scale(0.97); }
+
+    .sos-center {
+      max-width: 400px; margin: 0 auto 32px;
+      padding: 0 28px;
+      text-align: center;
+      animation: fadeUp 0.5s 0.1s cubic-bezier(.16,1,.3,1) both;
+    }
+    .sos-selected { font-size: 13px; color: var(--muted); margin-bottom: 20px; }
+    .sos-selected strong { color: var(--white); font-weight: 500; }
+
+    #sosBigBtn {
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      border: none;
+      background: conic-gradient(from 0deg, #E53535, #ff6b6b, #E53535);
+      color: #fff;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px; letter-spacing: 3px;
+      cursor: pointer;
+      position: relative;
+      box-shadow: 0 0 0 8px rgba(229,53,53,0.12), 0 0 0 16px rgba(229,53,53,0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: sosPulse 2s ease-in-out infinite;
+    }
+    #sosBigBtn:hover { transform: scale(1.07); box-shadow: 0 0 0 12px rgba(229,53,53,0.18), 0 0 40px rgba(229,53,53,0.4); }
+    #sosBigBtn:active { transform: scale(0.95); }
+    @keyframes sosPulse {
+      0%,100% { box-shadow: 0 0 0 8px rgba(229,53,53,0.12), 0 0 0 16px rgba(229,53,53,0.06); }
+      50%      { box-shadow: 0 0 0 14px rgba(229,53,53,0.2), 0 0 0 26px rgba(229,53,53,0.08); }
+    }
+
+    .sos-help-msg {
+      margin-top: 20px;
+      background: rgba(229,53,53,0.1);
+      border: 1px solid rgba(229,53,53,0.3);
+      border-radius: 14px;
+      padding: 16px 20px;
+      color: #ffaaaa;
+      font-size: 15px; line-height: 1.6;
+    }
+    .hosp-info-small { font-size: 13px; color: var(--muted); display: block; margin-top: 6px; }
+
+    .voice-row { text-align: center; margin-top: 24px; padding-bottom: 40px; }
+    .voice-hint { font-size: 12px; color: var(--muted); letter-spacing: 1px; margin-bottom: 12px; }
+    .btn-mic {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: rgba(229,53,53,0.12); border: 1.5px solid rgba(229,53,53,0.3);
+      color: var(--red); display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .btn-mic:hover { background: rgba(229,53,53,0.22); transform: scale(1.08); }
+    .btn-mic.listening { animation: micGlow 1s infinite; }
+    @keyframes micGlow {
+      0%,100% { box-shadow: 0 0 0 0 rgba(229,53,53,0.5); }
+      50%      { box-shadow: 0 0 0 16px rgba(229,53,53,0); }
+    }
+    .voice-out { margin-top: 10px; font-size: 14px; color: var(--green); min-height: 20px; font-style: italic; }
+
+    .ai-card {
+      background: var(--card2);
+      border: 1px solid rgba(229,53,53,0.2);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+    .ai-card h4 { font-size: 14px; font-weight: 500; color: #ff8a8a; margin-bottom: 6px; }
+    .ai-card p  { font-size: 13px; color: var(--muted); }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* FALL DETECTION POPUP */
+    #fallPopup {
+      position: fixed;
+      inset: 0;
+      background: black;
+      color: white;
+      display: none;
+      z-index: 9999;
+      text-align: center;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="blob blob-a"></div>
+  <div class="blob blob-b"></div>
+
+  <nav>
+    <div class="nav-left">
+      <svg width="28" height="28" viewBox="0 0 100 100">
+        <path d="M50 85 L20 55 A15 15 0 1 1 50 35 A15 15 0 1 1 80 55 Z" fill="#E53535"/>
+        <polyline points="25,55 35,55 42,45 50,65 60,40 70,55 75,55" fill="none" stroke="white" stroke-width="4"/>
+      </svg>
+      <span class="nav-brand">Rapid Response</span>
+      <span class="nav-badge">🚨 Emergency</span>
+    </div>
+    <div class="nav-right">
+      <a href="index.html" class="btn-back">← Back</a>
+    </div>
+  </nav>
+
+  <div class="app" id="appSection">
+    <div class="hero">
+      <h1>What's the <span>Emergency?</span></h1>
+      <p>Press the SOS button to alert responders instantly</p>
+    </div>
+
+    <div class="section">
+      <p class="section-label">Select Emergency Type</p>
+      <div class="etype-grid">
+        <button class="etype-btn" onclick="selectType(this, 'Fire Emergency')">
+          <div class="etype-icon">🔥</div>
+          Fire Emergency
+        </button>
+        <button class="etype-btn" onclick="selectType(this, 'Crime Emergency')">
+          <div class="etype-icon">🚔</div>
+          Crime Emergency
+        </button>
+        <button class="etype-btn" onclick="selectType(this, 'Medical Emergency')">
+          <div class="etype-icon">🚑</div>
+          Medical Emergency
+        </button>
+        <button class="etype-btn" onclick="selectType(this, 'Others')">
+          <div class="etype-icon">⚠️</div>
+          Others
+        </button>
+      </div>
+    </div>
+
+    <div class="sos-center">
+      <p class="sos-selected">
+        Press SOS and speak — AI will detect the emergency automatically
+      </p>
+      <button id="sosBigBtn" onclick="handleSOS()">SOS</button>
+      <div id="helpMsg" class="sos-help-msg" style="display:none;">
+        🚑 Help is on the way…
+        <small class="hosp-info-small" id="hospInfo"></small>
+      </div>
+    </div>
+
+    <div id="smartPanel" style="display:none; margin-top:10px; max-width:400px; margin-left:auto; margin-right:auto; padding:0 28px;"></div>
+    <div id="nearbyVolunteers" style="display:none; margin-top:15px; max-width:400px; margin-left:auto; margin-right:auto; padding:0 28px;"></div>
+
+    <div class="voice-row">
+      <p class="voice-hint">— or speak your emergency —</p>
+      <button class="btn-mic" id="micBtn" onclick="startVoice()">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+          <path d="M12 15C13.66 15 15 13.66 15 12V6C15 4.34 13.66 3 12 3C10.34 3 9 4.34 9 6V12C9 13.66 10.34 15 12 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M19 11V12C19 15.87 15.87 19 12 19C8.13 19 5 15.87 5 12V11" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <line x1="12" y1="19" x2="12" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <line x1="8" y1="22" x2="16" y2="22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </button>
+      <p id="voiceOut" class="voice-out"></p>
+    </div>
+
+    <div class="ai-box" id="aiBox" style="display:none; max-width:400px; margin:0 auto; padding:0 28px 40px;">
+      <div class="ai-card">
+        <h4>Finding Nearest Hospital</h4>
+        <p>AI is locating the best hospital for you…</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FALL DETECTION POPUP -->
+  <div id="fallPopup">
+    <div style="font-size:22px; margin-bottom:10px;">⚠️ Possible fall detected</div>
+    <div id="countdownText"></div>
+    <button onclick="cancelSOS()" style="margin-top:25px;padding:12px 28px;font-size:18px;border:none;border-radius:12px;background:#E53535;color:white;cursor:pointer;">
+      ❌ I'm Safe
+    </button>
+  </div>
+
+  <script>
+    firebase.initializeApp({
+      apiKey:     "AIzaSyD4n2n0482uzNDz4JxPzL6tmGOA8Cqt2So",
+      authDomain: "rapidresponse-8c598.firebaseapp.com",
+      projectId:  "rapidresponse-8c598"
+    });
+    const db = firebase.firestore();
+
+    let userLat = null, userLng = null;
+    let selectedType = "";
+    let lastX = null, lastY = null, lastZ = null;
+    let shakeThreshold = 40;
+    let countdownInterval = null;
+    window.voiceText = "";
+
+    // Get location on load
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        userLat = pos.coords.latitude;
+        userLng = pos.coords.longitude;
+        setupMotionPermission();
+      },
+      (err) => {
+        console.log("Location denied", err);
+        setupMotionPermission();
+      }
+    );
+
+    function startMotionDetection() {
+      window.addEventListener("devicemotion", function(event) {
+        const acc = event.accelerationIncludingGravity;
+        if (!acc) return;
+        if (lastX !== null) {
+          let deltaX = Math.abs(acc.x - lastX);
+          let deltaY = Math.abs(acc.y - lastY);
+          let deltaZ = Math.abs(acc.z - lastZ);
+          if (deltaX + deltaY + deltaZ > shakeThreshold) {
+            triggerFallAlert();
+          }
+        }
+        lastX = acc.x; lastY = acc.y; lastZ = acc.z;
+      });
+    }
+
+    function triggerFallAlert() {
+      const popup = document.getElementById("fallPopup");
+      if (popup.style.display === "flex") return;
+      popup.style.display = "flex";
+      let seconds = 10;
+      const countdownEl = document.getElementById("countdownText");
+      countdownEl.innerHTML = `
+        <div style="font-size:18px; margin-bottom:10px;">🚨 Possible fall detected</div>
+        <div id="bigCount" style="font-size:70px;font-weight:bold;color:#ff3b3b;text-shadow:0 0 20px rgba(255,0,0,0.7);">${seconds}</div>
+        <div style="font-size:14px; margin-top:8px;">Sending SOS automatically...</div>
+      `;
+      if (navigator.vibrate) navigator.vibrate([300, 200, 300, 200, 500]);
+      countdownInterval = setInterval(() => {
+        seconds--;
+        const el = document.getElementById("bigCount");
+        if (el) { el.innerText = seconds; el.style.transform = "scale(1.2)"; setTimeout(() => { el.style.transform = "scale(1)"; }, 150); }
+        if (navigator.vibrate) navigator.vibrate(200);
+        if (seconds <= 0) {
+          clearInterval(countdownInterval);
+          popup.style.display = "none";
+          handleSOS();
+        }
+      }, 1000);
+    }
+
+    function cancelSOS() {
+      document.getElementById("fallPopup").style.display = "none";
+      clearInterval(countdownInterval);
+    }
+
+    function setupMotionPermission() {
+      if (typeof DeviceMotionEvent === "undefined") return;
+      if (typeof DeviceMotionEvent.requestPermission === "function") {
+        DeviceMotionEvent.requestPermission()
+          .then(response => { if (response === "granted") startMotionDetection(); })
+          .catch(err => console.error("Motion permission error:", err));
+      } else {
+        startMotionDetection();
+      }
+    }
+
+    async function handleSOS() {
+      document.getElementById("helpMsg").style.display = "block";
+      speakAI("Emergency alert sent. Nearby volunteers have been notified.");
+
+      try {
+        const docRef = await db.collection("emergencies").add({
+          location: { lat: userLat, lng: userLng },
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          type: selectedType || "unknown",
+          status: "waiting_for_volunteer",
+          volunteerReached: false
+        });
+        localStorage.setItem("currentEmergencyId", docRef.id);
+      } catch(e) {
+        console.log("Firestore error:", e);
+      }
+
+      setTimeout(() => { startAutoVoice(); }, 2000);
+    }
+
+    async function findBestHospital(emergencyType) {
+      if (!userLat) { alert("Location not available"); return; }
+      let filter = '["amenity"="hospital"]';
+      if (emergencyType === "cardiac") filter = '["amenity"="hospital"]["healthcare:speciality"~"cardiology"]';
+      else if (emergencyType === "trauma") filter = '["amenity"="hospital"]["emergency"="yes"]';
+      else if (emergencyType === "neuro") filter = '["amenity"="hospital"]["healthcare:speciality"~"neurology"]';
+
+      const q = `[out:json];(node${filter}(around:10000,${userLat},${userLng});way${filter}(around:10000,${userLat},${userLng}););out center;`;
+      try {
+        const data = await (await fetch("https://overpass-api.de/api/interpreter?data="+encodeURIComponent(q))).json();
+        let best = null, min = Infinity;
+        data.elements.forEach(h => {
+          const lat = h.lat || h.center?.lat;
+          const lng = h.lon || h.center?.lon;
+          if (!lat || !lng) return;
+          const d = dist(userLat, userLng, lat, lng);
+          if (d < min) { min = d; best = h; }
+        });
+        if (!best) return findBestHospital("general");
+        const name = best.tags?.name || "Hospital";
+        document.getElementById("hospInfo").innerText = `${name} • ${min.toFixed(1)} km away`;
+        speakAI(`Routing to ${name}`);
+        setTimeout(() => {
+          localStorage.setItem("bestHospital", JSON.stringify({ name, distance: min.toFixed(1), lat: best.lat || best.center?.lat, lng: best.lon || best.center?.lon, emergencyType }));
+          window.location.href = "volunteer-tracking.html";
+        }, 2500);
+      } catch(e) { console.error(e); }
+    }
+
+    function showSmartPanel(result) {
+      const panel = document.getElementById("smartPanel");
+      panel.style.display = "block";
+      let advice = "Stay calm.";
+      if (result.type === "cardiac") advice = "Keep patient seated and calm.";
+      else if (result.type === "trauma") advice = "Apply pressure to stop bleeding.";
+      else if (result.type === "neuro") advice = "Keep patient lying flat. Do not move suddenly.";
+      panel.innerHTML = `<div style="background:#121c2e;padding:14px;border-radius:12px;">🚨 <b>${result.type.toUpperCase()}</b> (${result.severity})<br>⏱ Response: Immediate<br>🧠 Advice: ${advice}</div>`;
+    }
+
+    function speakAI(text) {
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = "en-IN"; u.rate = 1;
+      window.speechSynthesis.speak(u);
+    }
+
+    function dist(lat1, lon1, lat2, lon2) {
+      const R = 6371, dL = (lat2-lat1)*Math.PI/180, dO = (lon2-lon1)*Math.PI/180;
+      return R*2*Math.atan2(Math.sqrt(Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2), Math.sqrt(1-(Math.sin(dL/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dO/2)**2)));
+    }
+
+    function extractSymptoms(text) {
+      const symptoms = [];
+      if (text.includes("heart")) symptoms.push("#HeartAttack");
+      if (text.includes("breathing") || text.includes("breath")) symptoms.push("#ShortnessOfBreath");
+      if (text.includes("bleeding")) symptoms.push("#HeavyBleeding");
+      if (text.includes("accident")) symptoms.push("#Accident");
+      if (text.includes("unconscious")) symptoms.push("#Unconscious");
+      if (text.includes("stroke")) symptoms.push("#Stroke");
+      return symptoms;
+    }
+
+    function analyzeEmergency(text) {
+      text = text.toLowerCase();
+      const patterns = {
+        cardiac: [/chest pain|heart pain|heart attack|tight chest|pressure/, /not breathing|can't breathe|breathing problem|shortness of breath/, /pulse low|no pulse/],
+        trauma:  [/accident|crash|collision|hit|fall|injury/, /bleeding|heavy bleeding|blood loss|wound/, /fracture|broken bone/],
+        neuro:   [/stroke|paralysis|can't move/, /unconscious|fainted|not responding/, /dizziness|blurred vision|seizure/],
+        general: [/fever|vomiting|weakness|pain|sick/]
+      };
+      let scores = { cardiac:0, trauma:0, neuro:0, general:0 };
+      for (let type in patterns) { patterns[type].forEach(regex => { if (regex.test(text)) scores[type] += 2; }); }
+      let severity = "normal";
+      if (/not breathing|unconscious|heavy bleeding|seizure|critical|dying/.test(text)) severity = "critical";
+      else if (/pain|injury|fever/.test(text)) severity = "moderate";
+      let type = Object.keys(scores).reduce((a,b) => scores[a]>scores[b]?a:b);
+      return { type, severity };
+    }
+
+    async function processVoiceAfterSOS(text) {
+      const result = analyzeEmergency(text);
+      speakAI(`Severity detected as ${result.severity}.`);
+      if (result.severity === "critical") speakAI("Critical emergency detected. Help needed immediately.");
+      else speakAI("Emergency detected. Nearby volunteers have been notified.");
+    }
+
+    function startAutoVoice() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        speakAI("Voice not supported. Opening volunteer tracking.");
+        setTimeout(() => { window.location.href = "volunteer-tracking.html"; }, 2000);
+        return;
+      }
+      const rec = new SR();
+      const out = document.getElementById("voiceOut");
+      rec.lang = "en-IN"; rec.continuous = false; rec.interimResults = false;
+      let gotVoice = false, secondAttempt = false;
+
+      function startListening() { rec.start(); }
+
+      rec.onresult = (e) => {
+        gotVoice = true;
+        const text = e.results[0][0].transcript.toLowerCase();
+        out.textContent = "🗣 " + text;
+        window.voiceText = text;
+        const result = analyzeEmergency(text);
+        processVoiceAfterSOS(text);
+        showSmartPanel(result);
+        setTimeout(() => { window.location.href = "volunteer-tracking.html"; }, 2500);
+      };
+
+      rec.onend = async () => {
+        if (gotVoice) return;
+        if (!secondAttempt) {
+          secondAttempt = true;
+          out.textContent = "⚠️ No voice detected.";
+          speakAI("I can't hear you. Please describe your situation.");
+          setTimeout(() => { startListening(); }, 6000);
+          return;
+        }
+        speakAI("No response detected. Emergency flow continuing.");
+        setTimeout(() => { window.location.href = "volunteer-tracking.html"; }, 2000);
+      };
+
+      speakAI("Volunteers are notified. Please describe your situation.");
+      setTimeout(() => { startListening(); }, 6000);
+    }
+
+    function selectType(btn, type) {
+      selectedType = type;
+      document.querySelectorAll(".etype-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+    }
+
+    function startVoice() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { alert("Voice not supported"); return; }
+      const rec = new SR();
+      rec.lang = "en-IN"; rec.continuous = false; rec.interimResults = false;
+      const btn = document.getElementById("micBtn"), out = document.getElementById("voiceOut");
+      btn.classList.add("listening"); out.textContent = "🎤 Listening…"; rec.start();
+      rec.onresult = e => {
+        const text = e.results[0][0].transcript.toLowerCase();
+        out.textContent = "🗣 " + text;
+        btn.classList.remove("listening");
+        let detectedType = "Medical Emergency";
+        if (text.includes("fire")) detectedType = "Fire Emergency";
+        else if (text.includes("attack") || text.includes("robbery")) detectedType = "Crime Emergency";
+        else if (text.includes("earthquake") || text.includes("flood")) detectedType = "Natural Disaster";
+        const buttons = document.querySelectorAll(".etype-btn");
+        buttons.forEach(b => b.classList.remove("active"));
+        const types = ["Fire Emergency","Crime Emergency","Medical Emergency","Others"];
+        const index = types.indexOf(detectedType);
+        if (buttons[index]) { buttons[index].classList.add("active"); selectType(buttons[index], detectedType); }
+        window.voiceText = text;
+        processVoiceAfterSOS(text);
+      };
+      rec.onerror = e => { out.textContent = "❌ " + e.error; btn.classList.remove("listening"); };
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapid Response — Volunteer Tracking</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<style>
+:root{
+  --bg:#080C14;
+  --card:#0E1523;
+  --card2:#121C2E;
+  --white:#EEF2FF;
+  --muted:#7C8AA5;
+  --green:#1DB97A;
+  --red:#E53535;
+  --border: rgba(255,255,255,0.07);
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+body{
+  background:var(--bg);
+  color:var(--white);
+  font-family:'DM Sans',sans-serif;
+}
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 28px;
+  background: rgba(8,12,20,0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.nav-left { display: flex; align-items: center; gap: 12px; }
+.nav-brand { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 2px; color: var(--white); }
+.nav-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; background: rgba(29,185,122,0.15); color: #5eecd8; border: 1px solid rgba(29,185,122,0.3); letter-spacing: 0.5px; }
+.nav-right { display: flex; align-items: center; gap: 12px; }
+.btn-back { padding: 7px 14px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 13px; cursor: pointer; text-decoration: none; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+.btn-back:hover { color: var(--white); border-color: rgba(255,255,255,0.2); background: rgba(255,255,255,0.08); }
+
+.container{
+  max-width:1100px;
+  margin:auto;
+  padding: 30px;
+}
+
+.title{
+  font-family:'Bebas Neue';
+  font-size:56px;
+  letter-spacing:2px;
+}
+
+.subtitle{
+  color:var(--muted);
+  margin-bottom:25px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:380px 1fr;
+  gap:24px;
+}
+
+@media (max-width: 700px) {
+  .grid { grid-template-columns: 1fr; }
+  #map { height: 350px; }
+  .title { font-size: 36px; }
+}
+
+.card{
+  background:var(--card);
+  padding:22px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,0.08);
+}
+
+.label{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:10px;
+}
+
+.value{
+  font-size:18px;
+  font-weight:600;
+  margin-top:4px;
+}
+
+#map{
+  height:580px;
+  border-radius:20px;
+}
+
+.btn{
+  width:100%;
+  margin-top:12px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  font-weight:600;
+  cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  font-size:14px;
+  transition: all 0.2s;
+}
+
+.track{
+  background:var(--green);
+  color:white;
+}
+.track:hover { opacity: 0.9; }
+
+.call{
+  background:rgba(229,53,53,0.15);
+  color:#ffb3b3;
+  border:1px solid rgba(229,53,53,0.3);
+}
+.call:hover { background: rgba(229,53,53,0.25); }
+
+.status{
+  margin-top:15px;
+  background:var(--card2);
+  padding:12px;
+  border-radius:12px;
+  font-size:13px;
+  color:var(--muted);
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="nav-left">
+    <svg width="28" height="28" viewBox="0 0 100 100">
+      <path d="M50 85 L20 55 A15 15 0 1 1 50 35 A15 15 0 1 1 80 55 Z" fill="#E53535"/>
+      <polyline points="25,55 35,55 42,45 50,65 60,40 70,55 75,55" fill="none" stroke="white" stroke-width="4"/>
+    </svg>
+    <span class="nav-brand">Rapid Response</span>
+    <span class="nav-badge">📍 Live Tracking</span>
+  </div>
+  <div class="nav-right">
+    <a href="emergency.html" class="btn-back">← Back</a>
+    <a href="index.html" class="btn-back">🏠 Home</a>
+  </div>
+</nav>
+
+<div class="container">
+  <div class="title">HELP IS COMING</div>
+  <div class="subtitle">Live Uber-style tracking of volunteer</div>
+
+  <div class="grid">
+    <div class="card">
+      <div class="label">Volunteer Name</div>
+      <div class="value" id="volunteerName">Waiting...</div>
+
+      <div class="label">Distance</div>
+      <div class="value" id="distance">--</div>
+
+      <div class="label">ETA</div>
+      <div class="value" id="eta">--</div>
+
+      <div class="label">Status</div>
+      <div class="value" id="statusText">Waiting for acceptance...</div>
+
+      <button class="btn track" onclick="focusMap()">📍 Focus Map</button>
+      <button class="btn call" onclick="callVolunteer()">📞 Call Volunteer</button>
+      <button class="btn call" onclick="callAmbulance()">🚑 Ambulance (108)</button>
+
+      <div class="status" id="liveStatus">System initializing...</div>
+    </div>
+
+    <div id="map"></div>
+  </div>
+</div>
+
+<script>
+let map;
+let userMarker;
+let userLat, userLng;
+let volunteerMarkers = [];
+let acceptedVolunteer = null;
+
+function initMap() {
+  navigator.geolocation.getCurrentPosition((pos) => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+
+    map = L.map("map").setView([userLat, userLng], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+
+    const userIcon = L.icon({ iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png", iconSize: [38, 38], iconAnchor: [19, 38] });
+    userMarker = L.marker([userLat, userLng], { icon: userIcon })
+      .addTo(map)
+      .bindPopup("You are here")
+      .bindTooltip("YOU", { permanent: true, direction: "top", offset: [0, -10] })
+      .openPopup();
+
+    showNearbyVolunteers();
+  }, (err) => {
+    console.log("Location error:", err);
+    // Use fallback location if GPS denied
+    userLat = 17.4239; userLng = 78.4738; // Hyderabad default
+    map = L.map("map").setView([userLat, userLng], 14);
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
+    userMarker = L.marker([userLat, userLng]).addTo(map).bindPopup("Approximate Location").openPopup();
+    showNearbyVolunteers();
+  });
+}
+
+function showNearbyVolunteers() {
+  const volunteers = [
+    { name: "Rahul", lat: userLat + 0.004, lng: userLng - 0.002, eta: "2 mins" },
+    { name: "Priya", lat: userLat + 0.006, lng: userLng + 0.003, eta: "4 mins" },
+    { name: "Arjun", lat: userLat - 0.005, lng: userLng + 0.002, eta: "6 mins" }
+  ];
+
+  volunteerMarkers = [];
+  volunteers.forEach(v => {
+    const marker = L.marker([v.lat, v.lng])
+      .addTo(map)
+      .bindPopup(`${v.name} • ${v.eta}`)
+      .bindTooltip(v.name, { permanent: true, direction: "top", offset: [0, -10] });
+    volunteerMarkers.push({ data: v, marker });
+  });
+
+  document.getElementById("liveStatus").innerText = "3 nearby volunteers found...";
+  document.getElementById("statusText").innerText = "Waiting for volunteer acceptance...";
+
+  setTimeout(() => { acceptPriya(); }, 8000);
+}
+
+function acceptPriya() {
+  acceptedVolunteer = volunteerMarkers.find(v => v.data.name === "Priya");
+  if (!acceptedVolunteer) return;
+
+  volunteerMarkers.forEach(v => { if (v.data.name !== "Priya") map.removeLayer(v.marker); });
+
+  document.getElementById("volunteerName").innerText = "Priya";
+  document.getElementById("statusText").innerText = "Volunteer accepted and is on the way";
+  document.getElementById("liveStatus").innerText = "Priya is approaching your location";
+
+  moveVolunteerTowardsUser();
+}
+
+function moveVolunteerTowardsUser() {
+  let vLat = acceptedVolunteer.data.lat;
+  let vLng = acceptedVolunteer.data.lng;
+
+  const interval = setInterval(() => {
+    vLat += (userLat - vLat) * 0.15;
+    vLng += (userLng - vLng) * 0.15;
+
+    acceptedVolunteer.marker.setLatLng([vLat, vLng]);
+    updateUI(vLat, vLng);
+    map.fitBounds([[userLat, userLng], [vLat, vLng]], { padding: [60, 60] });
+
+    const dist = getDistance(userLat, userLng, vLat, vLng);
+    if (dist < 0.1) {
+      clearInterval(interval);
+      document.getElementById("statusText").innerText = "Volunteer has arrived ✅";
+      document.getElementById("liveStatus").innerText = "Help is now with you";
+    }
+  }, 2000);
+}
+
+function updateUI(vLat, vLng) {
+  const dist = getDistance(userLat, userLng, vLat, vLng);
+  const eta = Math.ceil((dist / 30) * 60);
+  document.getElementById("distance").innerText = dist.toFixed(2) + " KM";
+  document.getElementById("eta").innerText = eta + " min";
+}
+
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function focusMap() { if (map) map.setView([userLat, userLng], 15); }
+function callVolunteer() { alert("📞 Calling Priya..."); }
+function callAmbulance() { window.location.href = "tel:108"; }
+
+initMap();
+</script>
+
+</body>
+</html>

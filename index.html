@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rapid Response — Choose Your Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --red:       #E53535;
+      --red-glow:  rgba(229,53,53,0.35);
+      --teal:      #0ABFA3;
+      --teal-glow: rgba(10,191,163,0.35);
+      --bg:        #080C14;
+      --card-bg:   #0E1523;
+      --border:    rgba(255,255,255,0.07);
+      --white:     #EEF2FF;
+      --muted:     #5A6A8A;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      font-family: 'DM Sans', sans-serif;
+      color: var(--white);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridDrift 20s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    @keyframes gridDrift {
+      0%   { background-position: 0 0, 0 0; }
+      100% { background-position: 0 60px, 60px 0; }
+    }
+
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(90px);
+      pointer-events: none;
+      z-index: 0;
+      animation: blobFloat 8s ease-in-out infinite alternate;
+    }
+    .blob-red  { width: 420px; height: 420px; background: rgba(229,53,53,0.12); top: -120px; left: -100px; animation-delay: 0s; }
+    .blob-teal { width: 380px; height: 380px; background: rgba(10,191,163,0.10); bottom: -100px; right: -80px; animation-delay: -4s; }
+    @keyframes blobFloat {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(30px, 20px) scale(1.08); }
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 48px;
+      padding: 40px 24px;
+      width: 100%;
+      max-width: 920px;
+    }
+
+    .brand {
+      text-align: center;
+      animation: fadeDown 0.7s cubic-bezier(.16,1,.3,1) both;
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .logo-ring {
+      width: 52px; height: 52px;
+      border-radius: 50%;
+      border: 2px solid rgba(229,53,53,0.5);
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(229,53,53,0.08);
+      position: relative;
+    }
+    .logo-ring::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1px solid rgba(229,53,53,0.18);
+      animation: ringPulse 2s ease-out infinite;
+    }
+    @keyframes ringPulse {
+      0%   { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.5); opacity: 0; }
+    }
+    .brand-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(28px, 4vw, 38px);
+      letter-spacing: 3px;
+      color: var(--white);
+    }
+    .brand-tagline {
+      font-size: 15px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      font-weight: 300;
+    }
+
+    .cards-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      width: 100%;
+    }
+    @media (max-width: 620px) {
+      .cards-row { grid-template-columns: 1fr; gap: 18px; }
+    }
+
+    .gcard {
+      position: relative;
+      background: var(--card-bg);
+      border-radius: 24px;
+      padding: 44px 32px 36px;
+      cursor: pointer;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      transition: transform 0.35s cubic-bezier(.16,1,.3,1), border-color 0.3s, box-shadow 0.3s;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 18px;
+      animation: fadeUp 0.7s cubic-bezier(.16,1,.3,1) both;
+    }
+    .gcard:nth-child(1) { animation-delay: 0.15s; }
+    .gcard:nth-child(2) { animation-delay: 0.28s; }
+
+    .gcard::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 24px;
+      opacity: 0;
+      transition: opacity 0.35s;
+      pointer-events: none;
+    }
+    .gcard-sos::before  { background: radial-gradient(ellipse at 30% 20%, rgba(229,53,53,0.18) 0%, transparent 65%); }
+    .gcard-hosp::before { background: radial-gradient(ellipse at 70% 20%, rgba(10,191,163,0.15) 0%, transparent 65%); }
+
+    .gcard::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 60px; height: 3px;
+      border-radius: 0 0 4px 0;
+      transition: width 0.4s cubic-bezier(.16,1,.3,1);
+    }
+    .gcard-sos::after  { background: var(--red); }
+    .gcard-hosp::after { background: var(--teal); }
+
+    .gcard:hover { transform: translateY(-8px) scale(1.015); }
+    .gcard:hover::before { opacity: 1; }
+    .gcard:hover::after  { width: 100%; }
+    .gcard-sos:hover  { border-color: rgba(229,53,53,0.4); box-shadow: 0 24px 60px rgba(229,53,53,0.18), 0 4px 16px rgba(0,0,0,0.4); }
+    .gcard-hosp:hover { border-color: rgba(10,191,163,0.4); box-shadow: 0 24px 60px rgba(10,191,163,0.15), 0 4px 16px rgba(0,0,0,0.4); }
+    .gcard:active { transform: translateY(-4px) scale(0.99); }
+
+    .card-icon-wrap {
+      position: relative;
+      width: 88px; height: 88px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.3s;
+    }
+    .gcard:hover .card-icon-wrap { transform: scale(1.1); }
+    .icon-sos  { background: rgba(229,53,53,0.12); border: 1.5px solid rgba(229,53,53,0.3); }
+    .icon-hosp { background: rgba(10,191,163,0.10); border: 1.5px solid rgba(10,191,163,0.25); }
+
+    .icon-sos-pulse {
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      border: 1px solid rgba(229,53,53,0.3);
+      animation: iconPulse 2s ease-out infinite;
+    }
+    @keyframes iconPulse {
+      0%   { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .card-icon-wrap svg { width: 40px; height: 40px; position: relative; z-index: 1; }
+
+    .card-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(26px, 3.5vw, 32px);
+      letter-spacing: 2px;
+      line-height: 1;
+      transition: color 0.25s;
+    }
+    .gcard-sos .card-title  { color: var(--white); }
+    .gcard-hosp .card-title { color: var(--white); }
+    .gcard-sos:hover .card-title  { color: #ff8a8a; }
+    .gcard-hosp:hover .card-title { color: #5eecd8; }
+
+    .card-desc {
+      font-size: 14px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-weight: 300;
+      max-width: 240px;
+    }
+
+    .card-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+    }
+    .pill {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+    }
+    .pill-red  { background: rgba(229,53,53,0.12); color: #ff8a8a; border: 1px solid rgba(229,53,53,0.25); }
+    .pill-teal { background: rgba(10,191,163,0.10); color: #5eecd8; border: 1px solid rgba(10,191,163,0.2); }
+
+    .card-cta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 4px;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .gcard:hover .card-cta { opacity: 1; transform: translateY(0); }
+    .cta-sos  { color: var(--red); }
+    .cta-hosp { color: var(--teal); }
+    .cta-arrow { font-size: 18px; transition: transform 0.25s; }
+    .gcard:hover .cta-arrow { transform: translateX(5px); }
+
+    .footer-note {
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 0.5px;
+      animation: fadeUp 0.7s 0.45s cubic-bezier(.16,1,.3,1) both;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .transition-overlay {
+      position: fixed; inset: 0; z-index: 999;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .transition-overlay.active { opacity: 1; pointer-events: all; }
+    .overlay-red  { background: radial-gradient(circle at center, rgba(229,53,53,0.95) 0%, #080C14 80%); }
+    .overlay-teal { background: radial-gradient(circle at center, rgba(10,191,163,0.9) 0%, #080C14 80%); }
+
+    .hamburger-btn {
+      position: fixed;
+      top: 22px;
+      right: 24px;
+      z-index: 900;
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, box-shadow 0.25s;
+      outline: none;
+    }
+    .hamburger-btn:hover {
+      background: rgba(14, 21, 35, 0.95);
+      border-color: rgba(10,191,163,0.35);
+      box-shadow: 0 0 18px rgba(10,191,163,0.15);
+    }
+    .hamburger-btn .bar {
+      width: 20px;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--white);
+      transition: transform 0.3s cubic-bezier(.16,1,.3,1), opacity 0.25s, width 0.3s;
+    }
+    .hamburger-btn.open .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+    .hamburger-btn.open .bar:nth-child(2) { opacity: 0; width: 0; }
+    .hamburger-btn.open .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+    .nav-dropdown {
+      position: fixed;
+      top: 74px;
+      right: 24px;
+      z-index: 890;
+      background: var(--card-bg);
+      border: 1px solid rgba(10,191,163,0.18);
+      border-radius: 16px;
+      padding: 8px;
+      min-width: 160px;
+      box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+      opacity: 0;
+      transform: translateY(-10px) scale(0.96);
+      transform-origin: top right;
+      pointer-events: none;
+      transition: opacity 0.28s cubic-bezier(.16,1,.3,1), transform 0.28s cubic-bezier(.16,1,.3,1);
+    }
+    .nav-dropdown.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: all;
+    }
+    .nav-dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--white);
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      letter-spacing: 0.3px;
+      border: none;
+      background: transparent;
+      width: 100%;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .nav-dropdown-item:hover {
+      background: rgba(10,191,163,0.1);
+      color: #5eecd8;
+    }
+    .nav-dropdown-item .item-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: rgba(10,191,163,0.1);
+      border: 1px solid rgba(10,191,163,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 950;
+      background: rgba(8, 12, 20, 0.85);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .profile-modal {
+      position: relative;
+      background: #0a1520;
+      border: 1px solid rgba(10,191,163,0.18);
+      border-radius: 24px;
+      padding: 32px 28px 28px;
+      width: 100%;
+      max-width: 720px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 80px rgba(10,191,163,0.05), 0 0 0 1px rgba(255,255,255,0.03);
+      transform: scale(0.93) translateY(20px);
+      transition: transform 0.4s cubic-bezier(.16,1,.3,1);
+      overflow: hidden;
+    }
+    .modal-backdrop.open .profile-modal {
+      transform: scale(1) translateY(0);
+    }
+    .profile-modal::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent 0%, rgba(10,191,163,0.6) 40%, rgba(10,191,163,0.2) 100%);
+      border-radius: 24px 24px 0 0;
+    }
+
+    .ep-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .ep-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .ep-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: rgba(120,80,200,0.18);
+      border: 1.5px solid rgba(140,90,220,0.35);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .ep-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 22px;
+      letter-spacing: 2.5px;
+      color: var(--teal);
+      line-height: 1;
+    }
+    .ep-header-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn-edit {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 10px;
+      background: rgba(10,191,163,0.1);
+      border: 1px solid rgba(10,191,163,0.3);
+      color: var(--teal);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.25s, border-color 0.25s, box-shadow 0.25s, transform 0.2s;
+      letter-spacing: 0.3px;
+    }
+    .btn-edit:hover {
+      background: rgba(10,191,163,0.18);
+      border-color: rgba(10,191,163,0.55);
+      box-shadow: 0 0 18px rgba(10,191,163,0.15);
+      transform: translateY(-1px);
+    }
+    .btn-edit.saving {
+      background: rgba(10,191,163,0.22);
+      border-color: rgba(10,191,163,0.7);
+      color: #5eecd8;
+    }
+    .btn-edit svg { flex-shrink: 0; }
+
+    .modal-close {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, transform 0.2s;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+    .modal-close:hover {
+      background: rgba(229,53,53,0.12);
+      border-color: rgba(229,53,53,0.35);
+      color: #ff8a8a;
+      transform: scale(1.08);
+    }
+
+    .ep-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    @media (max-width: 560px) {
+      .ep-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 380px) {
+      .ep-grid { grid-template-columns: 1fr; }
+    }
+
+    .ep-cell {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.25s, background 0.25s;
+      min-height: 82px;
+    }
+    .ep-cell:hover {
+      border-color: rgba(10,191,163,0.18);
+      background: rgba(10,191,163,0.03);
+    }
+    .ep-cell-label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 1.4px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .ep-cell-value {
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--white);
+      line-height: 1.3;
+      min-height: 22px;
+      word-break: break-word;
+    }
+    .ep-cell-value.empty {
+      color: rgba(90,106,138,0.45);
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    .ep-cell-input {
+      width: 100%;
+      background: rgba(10,191,163,0.05);
+      border: 1px solid rgba(10,191,163,0.3);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--white);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -webkit-appearance: none;
+    }
+    .ep-cell-input::placeholder { color: rgba(90,106,138,0.5); font-size: 13px; }
+    .ep-cell-input:focus {
+      border-color: rgba(10,191,163,0.6);
+      box-shadow: 0 0 0 3px rgba(10,191,163,0.1);
+    }
+
+    .ep-cell-input  { display: none; }
+    .profile-modal.editing .ep-cell-value  { display: none; }
+    .profile-modal.editing .ep-cell-input  { display: block; }
+    .profile-modal.editing .ep-cell {
+      border-color: rgba(10,191,163,0.18);
+      background: rgba(10,191,163,0.03);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-red"></div>
+  <div class="blob blob-teal"></div>
+
+  <div class="transition-overlay overlay-red"  id="overlay-red"></div>
+  <div class="transition-overlay overlay-teal" id="overlay-teal"></div>
+
+  <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+    <span class="bar"></span>
+    <span class="bar"></span>
+    <span class="bar"></span>
+  </button>
+
+  <div class="nav-dropdown" id="navDropdown">
+    <button class="nav-dropdown-item" id="openProfileBtn">
+      <span class="item-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0ABFA3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </span>
+      Profile
+    </button>
+  </div>
+
+  <div class="modal-backdrop" id="profileModalBackdrop">
+    <div class="profile-modal" id="profileModal" role="dialog" aria-modal="true" aria-label="Emergency Profile">
+      <div class="ep-header">
+        <div class="ep-header-left">
+          <div class="ep-avatar">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9B6DFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+          </div>
+          <p class="ep-title">Emergency Profile</p>
+        </div>
+        <div class="ep-header-right">
+          <button class="btn-edit" id="editProfileBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            <span id="editBtnLabel">Edit</span>
+          </button>
+          <button class="modal-close" id="closeProfileBtn" aria-label="Close">✕</button>
+        </div>
+      </div>
+
+      <div class="ep-grid">
+        <div class="ep-cell">
+          <span class="ep-cell-label">Name</span>
+          <span class="ep-cell-value empty" id="dispName">—</span>
+          <input class="ep-cell-input" type="text" id="inputName" placeholder="Full name" autocomplete="name" />
+        </div>
+        <div class="ep-cell">
+          <span class="ep-cell-label">Blood Group</span>
+          <span class="ep-cell-value" id="dispBlood">O+</span>
+          <input class="ep-cell-input" type="text" id="inputBlood" placeholder="e.g. O+" />
+        </div>
+        <div class="ep-cell">
+          <span class="ep-cell-label">Allergies</span>
+          <span class="ep-cell-value" id="dispAllergies">None</span>
+          <input class="ep-cell-input" type="text" id="inputAllergies" placeholder="e.g. Penicillin" />
+        </div>
+        <div class="ep-cell">
+          <span class="ep-cell-label">Emergency Contact</span>
+          <span class="ep-cell-value" id="dispContact">+91 XXXXXXXXXX</span>
+          <input class="ep-cell-input" type="tel" id="inputContact" placeholder="+91 XXXXXXXXXX" autocomplete="tel" />
+        </div>
+        <div class="ep-cell">
+          <span class="ep-cell-label">Conditions</span>
+          <span class="ep-cell-value" id="dispConditions">None</span>
+          <input class="ep-cell-input" type="text" id="inputConditions" placeholder="e.g. Diabetes" />
+        </div>
+        <div class="ep-cell">
+          <span class="ep-cell-label">Insurance</span>
+          <span class="ep-cell-value" id="dispInsurance">N/A</span>
+          <input class="ep-cell-input" type="text" id="inputInsurance" placeholder="Provider / Policy no." />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="logo-ring">
+          <svg width="26" height="26" viewBox="0 0 100 100">
+            <path d="M50 85 L20 55 A15 15 0 1 1 50 35 A15 15 0 1 1 80 55 Z" fill="#E53535"/>
+            <polyline points="25,55 35,55 42,45 50,65 60,40 70,55 75,55" fill="none" stroke="white" stroke-width="4"/>
+          </svg>
+        </div>
+        <span class="brand-name">Rapid Response</span>
+      </div>
+      <p class="brand-tagline">Select a service to continue</p>
+    </div>
+
+    <div class="cards-row">
+      <a class="gcard gcard-sos" href="emergency.html" onclick="triggerTransition(event,'red','emergency.html')">
+        <div class="card-icon-wrap icon-sos">
+          <div class="icon-sos-pulse"></div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#E53535" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div>
+          <p class="card-title">Emergency Block</p>
+        </div>
+        <p class="card-desc">Instantly send SOS alerts for fire, medical, crime, or natural disaster emergencies</p>
+        <div class="card-pills">
+          <span class="pill pill-red">🔥 Fire</span>
+          <span class="pill pill-red">❤️ Medical</span>
+          <span class="pill pill-red">🛡️ Crime</span>
+          <span class="pill pill-red">🌩️ Disaster</span>
+        </div>
+        <div class="card-cta cta-sos">
+          Enter <span class="cta-arrow">→</span>
+        </div>
+      </a>
+
+      <a class="gcard gcard-hosp" href="hospitalfinder.html" onclick="triggerTransition(event,'teal','hospitalfinder.html')">
+        <div class="card-icon-wrap icon-hosp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0ABFA3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+            <line x1="12" y1="5" x2="12" y2="9"/>
+            <line x1="10" y1="7" x2="14" y2="7"/>
+          </svg>
+        </div>
+        <div>
+          <p class="card-title">Hospital Finder</p>
+        </div>
+        <p class="card-desc">Locate the nearest available hospitals based on your GPS location and medical condition</p>
+        <div class="card-pills">
+          <span class="pill pill-teal">📍 GPS Search</span>
+          <span class="pill pill-teal">🏥 Live Results</span>
+          <span class="pill pill-teal">🚑 Navigate</span>
+        </div>
+        <div class="card-cta cta-hosp">
+          Enter <span class="cta-arrow">→</span>
+        </div>
+      </a>
+    </div>
+
+    <p class="footer-note">© 2025 Rapid Response · Emergency Services Platform</p>
+  </div>
+
+  <script>
+    function triggerTransition(e, color, dest) {
+      e.preventDefault();
+      const overlay = document.getElementById('overlay-' + color);
+      overlay.classList.add('active');
+      setTimeout(() => { window.location.href = dest; }, 420);
+    }
+
+    const hamburgerBtn  = document.getElementById('hamburgerBtn');
+    const navDropdown   = document.getElementById('navDropdown');
+
+    function toggleDropdown(force) {
+      const isOpen = navDropdown.classList.contains('open');
+      const shouldOpen = force !== undefined ? force : !isOpen;
+      navDropdown.classList.toggle('open', shouldOpen);
+      hamburgerBtn.classList.toggle('open', shouldOpen);
+    }
+
+    hamburgerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!navDropdown.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+        toggleDropdown(false);
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        toggleDropdown(false);
+        closeModal();
+      }
+    });
+
+    const modalBackdrop   = document.getElementById('profileModalBackdrop');
+    const profileModal    = document.getElementById('profileModal');
+    const openProfileBtn  = document.getElementById('openProfileBtn');
+    const closeProfileBtn = document.getElementById('closeProfileBtn');
+    const editProfileBtn  = document.getElementById('editProfileBtn');
+    const editBtnLabel    = document.getElementById('editBtnLabel');
+
+    const profileData = {
+      name: '', blood: 'O+', allergies: 'None',
+      contact: '+91 XXXXXXXXXX', conditions: 'None', insurance: 'N/A'
+    };
+
+    const fields = [
+      { disp: 'dispName',       input: 'inputName',       key: 'name'       },
+      { disp: 'dispBlood',      input: 'inputBlood',      key: 'blood'      },
+      { disp: 'dispAllergies',  input: 'inputAllergies',  key: 'allergies'  },
+      { disp: 'dispContact',    input: 'inputContact',    key: 'contact'    },
+      { disp: 'dispConditions', input: 'inputConditions', key: 'conditions' },
+      { disp: 'dispInsurance',  input: 'inputInsurance',  key: 'insurance'  }
+    ];
+
+    function renderDisplay() {
+      fields.forEach(f => {
+        const el = document.getElementById(f.disp);
+        const val = profileData[f.key];
+        el.textContent = val || '—';
+        el.classList.toggle('empty', !val);
+      });
+    }
+
+    function syncInputsFromData() {
+      fields.forEach(f => {
+        document.getElementById(f.input).value = profileData[f.key];
+      });
+    }
+
+    function openModal() {
+      renderDisplay();
+      modalBackdrop.classList.add('open');
+      document.body.style.overflow = 'hidden';
+      toggleDropdown(false);
+    }
+
+    function closeModal() {
+      if (profileModal.classList.contains('editing')) {
+        exitEditMode(false);
+      }
+      modalBackdrop.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function enterEditMode() {
+      syncInputsFromData();
+      profileModal.classList.add('editing');
+      editBtnLabel.textContent = 'Save';
+      editProfileBtn.classList.add('saving');
+      editProfileBtn.querySelector('svg').innerHTML = '<polyline points="20 6 9 17 4 12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+      setTimeout(() => document.getElementById('inputName').focus(), 50);
+    }
+
+    function exitEditMode(save) {
+      if (save) {
+        fields.forEach(f => {
+          profileData[f.key] = document.getElementById(f.input).value.trim();
+        });
+        renderDisplay();
+      }
+      profileModal.classList.remove('editing');
+      editBtnLabel.textContent = 'Edit';
+      editProfileBtn.classList.remove('saving');
+      editProfileBtn.querySelector('svg').innerHTML = '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+    }
+
+    editProfileBtn.addEventListener('click', () => {
+      if (profileModal.classList.contains('editing')) exitEditMode(true);
+      else enterEditMode();
+    });
+
+    openProfileBtn.addEventListener('click', openModal);
+    closeProfileBtn.addEventListener('click', closeModal);
+    modalBackdrop.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+  </script>
+</body>
+</html>
